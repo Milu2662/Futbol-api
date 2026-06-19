@@ -57,50 +57,83 @@ El proyecto incluye una interfaz web funcional para interactuar con la API, pers
 
 ## Estructura del proyecto
 Futbol-api/
+
 ├── backend/
+
 │   ├── app/
+
 │   │   ├── api/                  # Endpoints REST
+
 │   │   │   ├── equipos.py
+
 │   │   │   ├── partidos.py
+
 │   │   │   ├── tabla_posiciones.py
+
 │   │   │   └── torneo.py
+
 │   │   ├── core/
+
 │   │   │   └── config.py         # Configuración y variables de entorno
+
 │   │   ├── db/
+
 │   │   │   └── session.py        # Conexión a la base de datos
+
 │   │   ├── models/                # Modelos SQLAlchemy
+
 │   │   │   ├── equipo.py
+
 │   │   │   └── partido.py
+
 │   │   ├── schemas/                # Esquemas Pydantic de entrada y salida
+
 │   │   │   ├── equipo.py
+
 │   │   │   ├── partido.py
+
 │   │   │   └── tabla_posiciones.py
+
 │   │   ├── services/                # Lógica de negocio
+
 │   │   │   ├── equipo_service.py
+
 │   │   │   ├── partido_service.py
+
 │   │   │   ├── tabla_posiciones_service.py
+
 │   │   │   └── torneo_service.py
+
 │   │   └── main.py                   # Punto de entrada de la aplicación
+
 │   ├── alembic/                        # Migraciones de base de datos
+
 │   ├── tests/                           # Pruebas automatizadas
+
 │   ├── Dockerfile
+
 │   └── requirements.txt
-├── frontend/
-│   ├── css/style.css
-│   ├── js/
-│   └── index.html
+
 ├── frontend/
 
 │   ├── css/style.css
 
 │   ├── js/                             # api.js, auth.js, ui.js, tabs.js, equipos.js, partidos.js, tabla.js, app.js
+
 │   └── index.html
+
 ├── docs/
+
 │   ├── diagrama-er.png
+
 │   └── screenshots/
+
 ├── .github/workflows/ci.yml
+
 ├── docker-compose.yml
+
 ├── .env.example
+
 └── README.md
 
 La aplicación está organizada por capas, separando claramente la lógica de negocio de los modelos de datos y de la capa de presentación:

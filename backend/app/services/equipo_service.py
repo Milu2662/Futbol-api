@@ -5,12 +5,13 @@ from fastapi import HTTPException, status
 
 from app.models.equipo import Equipo
 from app.models.partido import Partido
+from app.models.usuario import Usuario
 from app.schemas.equipo import EquipoCreate, EquipoUpdate
 
 MAX_EQUIPOS = 4
 
 
-def crear_equipo(db: Session, equipo_data: EquipoCreate) -> Equipo:
+def crear_equipo(db: Session, equipo_data: EquipoCreate, usuario_actual: Usuario) -> Equipo:
     total_equipos = db.query(Equipo).count()
     if total_equipos >= MAX_EQUIPOS:
         raise HTTPException(
@@ -18,7 +19,7 @@ def crear_equipo(db: Session, equipo_data: EquipoCreate) -> Equipo:
             detail=f"Ya existen {MAX_EQUIPOS} equipos registrados. No se permiten más para el cuadrangular.",
         )
 
-    nuevo_equipo = Equipo(**equipo_data.model_dump())
+    nuevo_equipo = Equipo(**equipo_data.model_dump(), registrado_por_id=usuario_actual.id)
     db.add(nuevo_equipo)
     try:
         db.commit()
@@ -64,11 +65,8 @@ def actualizar_equipo(db: Session, equipo_id: int, equipo_data: EquipoUpdate) ->
     db.refresh(equipo)
     return equipo
 
+
 def eliminar_equipo(db: Session, equipo_id: int) -> None:
-    """
-    Elimina un equipo y, en cascada, todos los partidos donde participaba
-    (como local o visitante), para no dejar referencias huérfanas.
-    """
     equipo = obtener_equipo_por_id(db, equipo_id)
 
     db.query(Partido).filter(

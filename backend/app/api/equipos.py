@@ -2,15 +2,21 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.usuario import Usuario
 from app.schemas.equipo import EquipoCreate, EquipoUpdate, EquipoOut
 from app.services import equipo_service
+from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/equipos", tags=["Equipos"])
 
 
 @router.post("/", response_model=EquipoOut, status_code=status.HTTP_201_CREATED)
-def crear_equipo(equipo: EquipoCreate, db: Session = Depends(get_db)):
-    return equipo_service.crear_equipo(db, equipo)
+def crear_equipo(
+    equipo: EquipoCreate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    return equipo_service.crear_equipo(db, equipo, current_user)
 
 
 @router.get("/", response_model=list[EquipoOut])

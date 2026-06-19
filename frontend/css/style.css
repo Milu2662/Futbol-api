@@ -286,3 +286,53 @@ table.standings td.pts { font-weight: 700; color: var(--pitch-deep); }
 .panel-head-right { display: flex; align-items: center; gap: .75rem; }
 .btn-danger { background: transparent; color: var(--brick); border: 1px solid var(--brick); }
 .btn-danger:hover { background: var(--brick); color: #fff; opacity: 1; }
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+.login-card {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+.login-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--pitch);
+  margin: 0 0 .5rem;
+}
+.login-card h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  margin: 0 0 1.5rem;
+  color: var(--ink);
+}
+.login-form { display: flex; flex-direction: column; gap: .5rem; text-align: left; }
+.login-form label { font-size: .78rem; font-weight: 600; color: var(--ink-soft); margin-top: .35rem; }
+.login-form input {
+  font-family: var(--font-body);
+  font-size: .9rem;
+  padding: .65rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--chalk);
+  color: var(--ink);
+}
+.login-form input:focus { outline: 2px solid var(--pitch); outline-offset: 1px; }
+.login-form button { margin-top: .5rem; }
+.login-error { color: var(--brick); font-size: .82rem; min-height: 1.1rem; }
+
+.header-top-row { display: flex; justify-content: flex-end; margin-bottom: .5rem; }
+.btn-logout { background: transparent; color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.3); }
+.btn-logout:hover { background: rgba(255,255,255,.12); color: #fff; }

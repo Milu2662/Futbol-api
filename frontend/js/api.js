@@ -1,16 +1,59 @@
 const API_BASE = '';
+const TOKEN_KEY = 'futbol_token';
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
 
 async function apiRequest(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+
+  if (res.status === 401) {
+    clearToken();
+    mostrarLogin();
+    throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+  }
+
   if (res.status === 204) return null;
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data.detail || 'Ocurrió un error inesperado.');
   }
   return data;
+}
+
+async function login(username, password) {
+  const body = new URLSearchParams();
+  body.append('username', username);
+  body.append('password', password);
+
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.detail || 'Usuario o contraseña incorrectos.');
+  }
+
+  setToken(data.access_token);
 }
 
 const api = {

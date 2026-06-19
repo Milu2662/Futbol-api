@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -12,8 +12,10 @@ class Equipo(Base):
     nombre = Column(String(100), unique=True, nullable=False)
     escudo_url = Column(String(255), nullable=True)
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+    registrado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
 
-    # Relaciones inversas: permiten hacer equipo.partidos_local, equipo.partidos_visitante
+    registrado_por = relationship("Usuario")
+
     partidos_local = relationship(
         "Partido",
         foreign_keys="Partido.equipo_local_id",

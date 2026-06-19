@@ -1,14 +1,30 @@
 import os
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import equipos, partidos, tabla_posiciones, torneo
+from app.api import equipos, partidos, tabla_posiciones, torneo, auth
+from app.db.session import SessionLocal
+from app.services.auth_service import seed_admin_user, get_current_user
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db = SessionLocal()
+    try:
+        seed_admin_user(db)
+    finally:
+        db.close()
+    yield
+
 
 app = FastAPI(
     title="Cuadrangular Fútbol API",
     description="API REST para gestionar un cuadrangular de fútbol: equipos, partidos y tabla de posiciones.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -19,10 +35,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(equipos.router)
-app.include_router(partidos.router)
-app.include_router(tabla_posiciones.router)
-app.include_router(torneo.router)
+app.include_router(auth.router)
+app.include_router(equipos.router, dependencies=[Depends(get_current_user)])
+app.include_router(partidos.router, dependencies=[Depends(get_current_user)])
+app.include_router(tabla_posiciones.router, dependencies=[Depends(get_current_user)])
+app.include_router(torneo.router, dependencies=[Depends(get_current_user)])
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")

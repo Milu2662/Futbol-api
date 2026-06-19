@@ -57,14 +57,22 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 def seed_admin_user(db: Session) -> None:
-    """Crea el usuario administrador inicial si todavía no existe ningún usuario."""
-    existe_alguno = db.query(Usuario).first()
-    if existe_alguno:
+
+    admin = (
+        db.query(Usuario)
+        .filter(Usuario.username == settings.admin_username)
+        .first()
+    )
+
+    if admin:
+        admin.hashed_password = hash_password(settings.admin_password)
+        db.commit()
         return
 
-    admin = Usuario(
+    nuevo_admin = Usuario(
         username=settings.admin_username,
         hashed_password=hash_password(settings.admin_password),
     )
-    db.add(admin)
+
+    db.add(nuevo_admin)
     db.commit()

@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     admin_username: str = "admin"
-    admin_password: str = "admin123"
+    admin_password: str = "Admin123!"
 
     model_config = SettingsConfigDict(
         env_file="../.env",

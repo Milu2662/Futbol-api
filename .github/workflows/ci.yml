@@ -29,6 +29,7 @@ jobs:
       - name: Correr tests con pytest
         env:
           DATABASE_URL: postgresql://user:pass@localhost:5432/dummy_db
+          SECRET_KEY: s1gqc0Szymj+ry/cSZ+fL7o8qGps+BGa8t8hvZ0Kz6I=
         run: |
           cd backend
           python -m pytest -v --tb=short
@@ -36,6 +37,7 @@ jobs:
       - name: Reporte de cobertura
         env:
           DATABASE_URL: postgresql://user:pass@localhost:5432/dummy_db
+          SECRET_KEY: s1gqc0Szymj+ry/cSZ+fL7o8qGps+BGa8t8hvZ0Kz6I=
         run: |
           cd backend
           python -m pytest --cov=app --cov-report=term-missing

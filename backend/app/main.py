@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import equipos, partidos
+from app.api import equipos, partidos, tabla_posiciones
 
 app = FastAPI(
     title="Cuadrangular Fútbol API",
@@ -19,6 +19,7 @@ app.add_middleware(
 
 app.include_router(equipos.router)
 app.include_router(partidos.router)
+app.include_router(tabla_posiciones.router)
 
 
 @app.get("/", tags=["Root"])

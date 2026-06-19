@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-and-push:
-    name: Construir y publicar imagen
+    name: Construir, publicar y desplegar
     runs-on: ubuntu-latest
 
     steps:
@@ -26,3 +26,11 @@ jobs:
           file: backend/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/futbol-api:latest
+
+      - name: Disparar redeploy en Azure App Service
+        run: |
+          curl -X POST "https://futbol-api-milu2662.scm.azurewebsites.net/docker/hook" \
+            -u "${{ secrets.AZURE_KUDU_USERNAME }}:${{ secrets.AZURE_KUDU_PASSWORD }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            -i

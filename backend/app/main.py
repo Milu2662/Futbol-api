@@ -1,7 +1,9 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from app.api import equipos, partidos, tabla_posiciones
+from app.api import equipos, partidos, tabla_posiciones, torneo
 
 app = FastAPI(
     title="Cuadrangular Fútbol API",
@@ -20,8 +22,17 @@ app.add_middleware(
 app.include_router(equipos.router)
 app.include_router(partidos.router)
 app.include_router(tabla_posiciones.router)
+app.include_router(torneo.router)
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+app.mount("/app", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 
 @app.get("/", tags=["Root"])
 def root():
-    return {"mensaje": "Cuadrangular Fútbol API - usa /docs para ver la documentación interactiva"}
+    return {
+        "mensaje": "Cuadrangular Fútbol API",
+        "documentacion": "/docs",
+        "interfaz_web": "/app",
+    }

@@ -41,3 +41,32 @@ def test_actualizar_equipo(client):
     response = client.put(f"/equipos/{equipo_id}", json={"nombre": "Boca Juniors FC"})
     assert response.status_code == 200
     assert response.json()["nombre"] == "Boca Juniors FC"
+
+def test_eliminar_equipo(client):
+    crear = client.post("/equipos/", json={"nombre": "River Plate"})
+    equipo_id = crear.json()["id"]
+
+    response = client.delete(f"/equipos/{equipo_id}")
+    assert response.status_code == 204
+
+    consulta = client.get(f"/equipos/{equipo_id}")
+    assert consulta.status_code == 404
+
+
+def test_eliminar_equipo_borra_sus_partidos(client):
+    nombres = ["Equipo A", "Equipo B", "Equipo C", "Equipo D"]
+    for nombre in nombres:
+        client.post("/equipos/", json={"nombre": nombre})
+
+    partidos_antes = client.post("/partidos/generar-fixture").json()
+    assert len(partidos_antes) == 6
+
+    equipo_a_id = partidos_antes[0]["equipo_local"]["id"]
+    client.delete(f"/equipos/{equipo_a_id}")
+
+    partidos_despues = client.get("/partidos/").json()
+    # Equipo A jugaba 3 partidos (contra los otros 3); deben quedar solo 3
+    assert len(partidos_despues) == 3
+    for p in partidos_despues:
+        assert p["equipo_local"]["id"] != equipo_a_id
+        assert p["equipo_visitante"]["id"] != equipo_a_id

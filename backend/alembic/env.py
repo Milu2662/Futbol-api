@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.db.session import Base
 from app.models.equipo import Equipo
 from app.models.partido import Partido
+from app.models.usuario import Usuario
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

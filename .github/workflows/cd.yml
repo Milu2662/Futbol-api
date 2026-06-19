@@ -29,8 +29,13 @@ jobs:
 
       - name: Disparar redeploy en Azure App Service
         run: |
-          curl -X POST "https://futbol-api-milu2662.scm.azurewebsites.net/docker/hook" \
+          HTTP_CODE=$(curl -X POST "https://futbol-api-milu2662.scm.azurewebsites.net/docker/hook" \
             -u "${{ secrets.AZURE_KUDU_USERNAME }}:${{ secrets.AZURE_KUDU_PASSWORD }}" \
             -H "Content-Type: application/json" \
             -d '{}' \
-            -i
+            -s -o /dev/null -w "%{http_code}")
+          echo "Azure respondió con código: $HTTP_CODE"
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "ERROR: Azure rechazó la solicitud de redeploy."
+            exit 1
+          fi

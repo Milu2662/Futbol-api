@@ -276,9 +276,21 @@ Las pruebas cubren:
 - Cálculo de la tabla de posiciones, validando puntuación por victoria y empate, y el orden de clasificación resultante.
 
 ## Integración y despliegue continuo
-El pipeline de integración continua está definido en `.github/workflows/ci.yml` y se ejecuta automáticamente en cada push a la rama `develop` y en cada Pull Request hacia `main`.
 
-El flujo del pipeline consiste en: clonado del repositorio, instalación de Python 3.13, instalación de dependencias, ejecución de la suite de pruebas y generación de un reporte de cobertura.
+El proyecto cuenta con dos pipelines independientes definidos en `.github/workflows/`:
+
+**CI (`ci.yml`)**: se ejecuta en cada push a `develop` y en cada Pull Request hacia `main`.
+Instala las dependencias, ejecuta la suite de 21 pruebas automatizadas y genera un reporte
+de cobertura. Actua como verificacion obligatoria antes de integrar cambios a la rama principal.
+
+**CD (`cd.yml`)**: se ejecuta automaticamente en cada push a `main`. Construye la imagen
+Docker de la aplicacion, la publica en Docker Hub, y dispara el redespliegue en Azure App
+Service mediante una llamada autenticada al endpoint de despliegue (Kudu), verificando el
+codigo de respuesta para que el pipeline falle de forma visible si Azure rechaza la solicitud.
+
+Flujo completo: push a `main` -> CI ya validado en el Pull Request -> CD construye y publica
+la imagen -> Azure App Service descarga la imagen nueva y reinicia el contenedor, sin
+intervencion manual posterior al merge.
 
 ## Estrategia de ramas
 main        Versión estable, desplegable a producción

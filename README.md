@@ -37,7 +37,8 @@ El proyecto incluye una interfaz web funcional para interactuar con la API, pers
 | Contenedores | Docker, Docker Compose |
 | Integración continua | GitHub Actions |
 | Frontend | HTML, CSS y JavaScript, sin frameworks |
-| Despliegue | Render |
+| Despliegue | Microsoft Azure (App Service + Azure Database for PostgreSQL) |
+| Registro de contenedores | Docker Hub |
 
 ## Características
 - Registro de hasta cuatro equipos, con la restricción aplicada en la capa de negocio.
@@ -46,9 +47,13 @@ El proyecto incluye una interfaz web funcional para interactuar con la API, pers
 - Cálculo dinámico de la tabla de posiciones, con criterios de desempate por puntos, diferencia de gol y goles a favor.
 - Operaciones CRUD completas sobre equipos, incluyendo eliminación con borrado en cascada de los partidos asociados.
 - Endpoint de reinicio del torneo para iniciar un nuevo cuadrangular sin intervención manual sobre la base de datos.
-- Interfaz web con tres vistas: marcadores, tabla de posiciones y administración de equipos.
+- Autenticación basada en JWT: todos los endpoints de la API requieren un token válido, obtenido mediante un endpoint de inicio de sesión.
+- Trazabilidad de creación de equipos: cada equipo registra qué usuario lo creó.
+- Interfaz web con pantalla de inicio de sesión y tres vistas: marcadores, tabla de posiciones y administración de equipos.
 - Documentación interactiva generada automáticamente mediante OpenAPI/Swagger.
-- Suite de diecisiete pruebas automatizadas ejecutadas en cada integración.
+- Suite de veintiún pruebas automatizadas ejecutadas en cada integración.
+- Despliegue continuo en la nube sobre un contenedor Docker publicado en Docker Hub.
+
 
 ## Estructura del proyecto
 Futbol-api/
@@ -84,6 +89,12 @@ Futbol-api/
 │   ├── css/style.css
 │   ├── js/
 │   └── index.html
+├── frontend/
+
+│   ├── css/style.css
+
+│   ├── js/                             # api.js, auth.js, ui.js, tabs.js, equipos.js, partidos.js, tabla.js, app.js
+│   └── index.html
 ├── docs/
 │   ├── diagrama-er.png
 │   └── screenshots/
@@ -101,8 +112,16 @@ La aplicación está organizada por capas, separando claramente la lógica de ne
 - `frontend/` consume la API mediante peticiones `fetch` y no contiene lógica de negocio.
 
 ## Modelo de datos
-
 ![Diagrama entidad-relación](docs/diagrama-er.png)
+
+**Usuario**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| id | Integer (PK) | Identificador único |
+| username | String, único | Nombre de usuario para inicio de sesión |
+| hashed_password | String | Contraseña hasheada con bcrypt |
+| creado_en | DateTime | Fecha de creación |
 
 **Equipo**
 
@@ -110,8 +129,8 @@ La aplicación está organizada por capas, separando claramente la lógica de ne
 |---|---|---|
 | id | Integer (PK) | Identificador único |
 | nombre | String, único | Nombre del equipo |
-| escudo_url | String, opcional | URL del escudo |
 | fecha_creacion | DateTime | Fecha de registro |
+| registrado_por_id | Integer (FK → Usuario), opcional | Usuario que registró el equipo |
 
 **Partido**
 
@@ -126,6 +145,9 @@ La aplicación está organizada por capas, separando claramente la lógica de ne
 | fecha_juego | DateTime, nullable | Fecha del encuentro |
 
 La tabla de posiciones no se persiste como entidad independiente: se calcula dinámicamente a partir de los partidos jugados, evitando inconsistencias entre datos almacenados y datos derivados.
+
+Al iniciar la aplicación por primera vez, se crea automáticamente un usuario administrador a partir de las variables de entorno `ADMIN_USERNAME` y `ADMIN_PASSWORD`, evitando la necesidad de un endpoint público de registro.
+
 
 ## Instrucciones de ejecución
 
@@ -165,6 +187,8 @@ Este comando levanta PostgreSQL y el backend, ejecuta las migraciones automátic
 - Interfaz web: `http://localhost:8000/app/`
 - Documentación interactiva: `http://localhost:8000/docs`
 
+Al primer arranque se crea el usuario administrador con las credenciales definidas en `.env` (por defecto, usuario `admin`).
+
 ### Ejecución local sin Docker
 ```bash
 docker compose up -d db
@@ -187,14 +211,24 @@ uvicorn app.main:app --reload
 | Variable | Descripción | Ejemplo |
 |---|---|---|
 | `DATABASE_URL` | Cadena de conexión a PostgreSQL | `postgresql://user:pass@localhost:5433/futbol_db` |
-| `POSTGRES_USER` | Usuario de la base de datos | `futbol_user` |
-| `POSTGRES_PASSWORD` | Contraseña de la base de datos | `futbol_pass` |
-| `POSTGRES_DB` | Nombre de la base de datos | `futbol_db` |
+| `POSTGRES_USER` | Usuario de la base de datos (uso local con Docker Compose) | `futbol_user` |
+| `POSTGRES_PASSWORD` | Contraseña de la base de datos (uso local con Docker Compose) | `futbol_pass` |
+| `POSTGRES_DB` | Nombre de la base de datos (uso local con Docker Compose) | `futbol_db` |
+| `SECRET_KEY` | Clave usada para firmar los tokens JWT | cadena aleatoria larga |
+| `ALGORITHM` | Algoritmo de firma de los tokens | `HS256` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Minutos de validez del token de acceso | `60` |
+| `ADMIN_USERNAME` | Usuario administrador creado al primer arranque | `admin` |
+| `ADMIN_PASSWORD` | Contraseña del usuario administrador inicial | contraseña propia |
 
 Los valores de referencia para desarrollo local se encuentran en `.env.example`.
 
 ## Documentación de la API
-La documentación interactiva completa, generada automáticamente por FastAPI, está disponible en la ruta `/docs` una vez el servidor está en ejecución.
+La documentación interactiva completa, generada automáticamente por FastAPI, está disponible en la ruta `/docs` una vez el servidor está en ejecución. Todos los endpoints, a excepción de `/auth/login`, requieren un token JWT válido enviado en el encabezado `Authorization: Bearer <token>`.
+
+### Autenticación
+| Método | Endpoint | Descripción |
+|---|---|---|
+| POST | `/auth/login` | Autentica un usuario y devuelve un token JWT |
 
 ### Equipos
 | Método | Endpoint | Descripción |
@@ -223,10 +257,10 @@ La documentación interactiva completa, generada automáticamente por FastAPI, e
 |---|---|---|
 | DELETE | `/torneo/reiniciar` | Elimina todos los equipos y partidos registrados |
 
-Todos los endpoints devuelven códigos de estado HTTP semánticos. Las violaciones de reglas de negocio responden con `400`, los recursos inexistentes con `404`, y las operaciones de creación o eliminación exitosas con `201` o `204`, según corresponda. Las respuestas de error siguen el formato `{"detail": "mensaje descriptivo"}`.
+Todos los endpoints devuelven códigos de estado HTTP semánticos. Las violaciones de reglas de negocio responden con `400`, los recursos inexistentes con `404`, las peticiones sin autenticación o con un token inválido con `401`, y las operaciones de creación o eliminación exitosas con `201` o `204`, según corresponda. Las respuestas de error siguen el formato `{"detail": "mensaje descriptivo"}`.
 
 ## Pruebas automatizadas
-El proyecto cuenta con diecisiete pruebas automatizadas escritas con Pytest, ejecutadas sobre una base de datos SQLite en memoria, aislada de la base de datos de desarrollo.
+El proyecto cuenta con veintiún pruebas automatizadas escritas con Pytest, ejecutadas sobre una base de datos SQLite en memoria, aislada de la base de datos de desarrollo.
 
 ```bash
 cd backend
@@ -234,6 +268,8 @@ python -m pytest -v
 ```
 
 Las pruebas cubren:
+
+- Inicio de sesión exitoso y fallido, y acceso a endpoints protegidos con y sin token válido.
 - Operaciones CRUD sobre equipos, incluyendo el límite de cuatro registros, validación de nombres duplicados y eliminación en cascada.
 - Generación del fixture, incluyendo validaciones sobre la cantidad de equipos y la imposibilidad de generarlo más de una vez.
 - Registro de marcadores, incluyendo el rechazo de valores negativos.
@@ -241,8 +277,8 @@ Las pruebas cubren:
 
 ## Integración y despliegue continuo
 El pipeline de integración continua está definido en `.github/workflows/ci.yml` y se ejecuta automáticamente en cada push a la rama `develop` y en cada Pull Request hacia `main`.
+
 El flujo del pipeline consiste en: clonado del repositorio, instalación de Python 3.13, instalación de dependencias, ejecución de la suite de pruebas y generación de un reporte de cobertura.
-El despliegue a producción se ejecuta automáticamente en cada push a `main`, una vez que el código ha superado la validación de pruebas en el Pull Request correspondiente.
 
 ## Estrategia de ramas
 main        Versión estable, desplegable a producción
@@ -254,12 +290,27 @@ docs/*      Cambios de documentación
 Los mensajes de commit siguen la convención [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `test:`, `ci:`, `chore:`), facilitando la trazabilidad del historial de cambios.
 
 ## Despliegue
-URL de producción: *pendiente de actualizar tras el despliegue en Render.*
 
-La aplicación se despliega en [Render](https://render.com), con despliegue automático en cada push a la rama `main`. El backend y la base de datos PostgreSQL se ejecutan como servicios independientes dentro de la misma plataforma.
+**URL de producción:** https://futbol-api-milu2662.azurewebsites.net
+
+**Interfaz web:** https://futbol-api-milu2662.azurewebsites.net/app/
+
+**Documentación interactiva:** https://futbol-api-milu2662.azurewebsites.net/docs
+
+La aplicación está desplegada sobre Microsoft Azure, utilizando los siguientes recursos:
+
+| Recurso | Servicio de Azure | Detalle |
+|---|---|---|
+| Backend | App Service (Linux, plan F1) | Ejecuta la imagen Docker publicada en Docker Hub |
+| Base de datos | Azure Database for PostgreSQL – Flexible Server | Capa Burstable (B1ms) |
+| Imagen de contenedor | Docker Hub | Repositorio público `milu2662/futbol-api` |
+
+El backend y el frontend se sirven desde un único contenedor: el backend expone la API REST y, adicionalmente, sirve los archivos estáticos del frontend en la ruta `/app`. Las migraciones de base de datos se ejecutan automáticamente al iniciar el contenedor.
 
 ## Evidencia de funcionamiento
 A continuación se muestran capturas de la interfaz funcionando sobre los datos de prueba.
+
+![Inicio de sesión](docs/screenshots/login.png)
 ![Marcadores](docs/screenshots/marcadores.png)
 ![Tabla de posiciones](docs/screenshots/tabla.png)
 ![Administración de equipos](docs/screenshots/equipos.png)

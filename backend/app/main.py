@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Cuadrangular Fútbol API",
     description="API REST para gestionar un cuadrangular de fútbol: equipos, partidos y tabla de posiciones.",
-    version="1.0.0",
+    version="1.0.2",
     lifespan=lifespan,
 )
 

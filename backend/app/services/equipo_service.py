@@ -1,8 +1,10 @@
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 
 from app.models.equipo import Equipo
+from app.models.partido import Partido
 from app.schemas.equipo import EquipoCreate, EquipoUpdate
 
 MAX_EQUIPOS = 4
@@ -61,3 +63,17 @@ def actualizar_equipo(db: Session, equipo_id: int, equipo_data: EquipoUpdate) ->
         )
     db.refresh(equipo)
     return equipo
+
+def eliminar_equipo(db: Session, equipo_id: int) -> None:
+    """
+    Elimina un equipo y, en cascada, todos los partidos donde participaba
+    (como local o visitante), para no dejar referencias huérfanas.
+    """
+    equipo = obtener_equipo_por_id(db, equipo_id)
+
+    db.query(Partido).filter(
+        or_(Partido.equipo_local_id == equipo_id, Partido.equipo_visitante_id == equipo_id)
+    ).delete(synchronize_session=False)
+
+    db.delete(equipo)
+    db.commit()

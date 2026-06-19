@@ -26,3 +26,8 @@ def obtener_equipo(equipo_id: int, db: Session = Depends(get_db)):
 @router.put("/{equipo_id}", response_model=EquipoOut)
 def actualizar_equipo(equipo_id: int, equipo: EquipoUpdate, db: Session = Depends(get_db)):
     return equipo_service.actualizar_equipo(db, equipo_id, equipo)
+
+
+@router.delete("/{equipo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_equipo(equipo_id: int, db: Session = Depends(get_db)):
+    equipo_service.eliminar_equipo(db, equipo_id)

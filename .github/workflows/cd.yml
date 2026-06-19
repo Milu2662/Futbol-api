@@ -28,14 +28,17 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/futbol-api:latest
 
       - name: Disparar redeploy en Azure App Service
+        env:
+          KUDU_USER: ${{ secrets.AZURE_KUDU_USERNAME }}
+          KUDU_PASS: ${{ secrets.AZURE_KUDU_PASSWORD }}
         run: |
           HTTP_CODE=$(curl -X POST "https://futbol-api-milu2662.scm.azurewebsites.net/docker/hook" \
-            -u "${{ secrets.AZURE_KUDU_USERNAME }}:${{ secrets.AZURE_KUDU_PASSWORD }}" \
+            -u "${KUDU_USER}:${KUDU_PASS}" \
             -H "Content-Type: application/json" \
             -d '{}' \
             -s -o /dev/null -w "%{http_code}")
-          echo "Azure respondió con código: $HTTP_CODE"
+          echo "Azure respondio con codigo: $HTTP_CODE"
           if [ "$HTTP_CODE" -ge 400 ]; then
-            echo "ERROR: Azure rechazó la solicitud de redeploy."
+            echo "ERROR: Azure rechazo la solicitud de redeploy."
             exit 1
           fi
